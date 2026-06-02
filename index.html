@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EQ Assessment Tool</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; color: #1a2a3a; line-height: 1.6; }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+  header { background: #2a7f8f; color: white; padding: 40px 20px; text-align: center; border-radius: 12px; margin-bottom: 30px; }
+  header h1 { font-size: 2rem; margin-bottom: 8px; }
+  header p { opacity: 0.9; font-size: 1.05rem; }
+
+  .instructions { background: white; border-radius: 12px; padding: 24px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .instructions h2 { font-size: 1.2rem; margin-bottom: 12px; color: #2a7f8f; }
+  .scale-guide { display: flex; justify-content: space-between; background: #e8f4f6; border-radius: 8px; padding: 12px 20px; margin-top: 12px; font-size: 0.95rem; flex-wrap: wrap; gap: 8px; }
+  .scale-guide span { font-weight: 600; }
+
+  .progress-bar-container { background: white; border-radius: 12px; padding: 16px 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: sticky; top: 10px; z-index: 10; }
+  .progress-bar-container .label { font-size: 0.9rem; color: #667; margin-bottom: 8px; }
+  .progress-track { background: #e2e8f0; border-radius: 99px; height: 10px; overflow: hidden; }
+  .progress-fill { background: linear-gradient(90deg, #2a7f8f, #3db8cc); height: 100%; border-radius: 99px; transition: width 0.3s ease; width: 0%; }
+
+  .question-card { background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: border-color 0.2s; border: 2px solid transparent; }
+  .question-card.answered { border-color: #2a7f8f33; }
+  .question-card.unanswered-highlight { border-color: #e53e3e; animation: shake 0.4s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+
+  .question-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+  .question-num { background: #2a7f8f; color: white; min-width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+  .question-text { font-size: 1rem; padding-top: 4px; }
+  .question-category { font-size: 0.75rem; color: #2a7f8f; background: #e8f4f6; padding: 2px 8px; border-radius: 4px; margin-top: 4px; display: inline-block; }
+
+  .rating-group { display: flex; gap: 8px; justify-content: center; }
+  .rating-btn { width: 52px; height: 44px; border: 2px solid #cbd5e0; border-radius: 10px; background: white; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; color: #4a5568; }
+  .rating-btn:hover { border-color: #2a7f8f; background: #e8f4f6; }
+  .rating-btn.selected { background: #2a7f8f; color: white; border-color: #2a7f8f; transform: scale(1.08); }
+
+  .submit-section { text-align: center; margin: 40px 0; }
+  .submit-btn { background: #2a7f8f; color: white; border: none; padding: 16px 48px; font-size: 1.1rem; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+  .submit-btn:hover { background: #1f6a78; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(42,127,143,0.3); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .results-section { display: none; }
+  .results-section.visible { display: block; }
+
+  .results-header { background: #2a7f8f; color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 24px; }
+  .results-header h2 { font-size: 1.6rem; margin-bottom: 4px; }
+
+  .competency-card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .competency-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
+  .competency-score { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+  .competency-bar-track { background: #e2e8f0; border-radius: 99px; height: 14px; overflow: hidden; margin-bottom: 10px; }
+  .competency-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s ease; }
+  .competency-interpretation { font-size: 0.95rem; padding: 10px 14px; border-radius: 8px; }
+  .interp-strength { background: #c6f6d5; color: #22543d; }
+  .interp-attention { background: #fefcbf; color: #744210; }
+  .interp-development { background: #fed7d7; color: #822727; }
+
+  .overall-card { background: linear-gradient(135deg, #2a7f8f, #3db8cc); color: white; border-radius: 12px; padding: 30px; text-align: center; margin-bottom: 24px; }
+  .overall-card .score { font-size: 3rem; font-weight: 800; }
+  .overall-card .out-of { font-size: 1.1rem; opacity: 0.85; }
+
+  .interpretation-guide { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .interpretation-guide h3 { margin-bottom: 12px; color: #2a7f8f; }
+  .guide-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf2f7; align-items: center; gap: 12px; }
+  .guide-row:last-child { border: none; }
+  .guide-range { font-weight: 700; min-width: 60px; }
+
+  .retake-btn { background: white; color: #2a7f8f; border: 2px solid #2a7f8f; padding: 14px 40px; font-size: 1rem; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+  .retake-btn:hover { background: #e8f4f6; }
+
+  .error-msg { color: #e53e3e; text-align: center; margin-bottom: 16px; font-weight: 500; display: none; }
+
+  @media (max-width: 600px) {
+    .rating-btn { width: 44px; height: 40px; font-size: 0.9rem; }
+    .scale-guide { flex-direction: column; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Emotional Intelligence Assessment</h1>
+    <p>48 statements across 4 EQ competencies — rate how much each applies to you</p>
+  </header>
+
+  <div id="quiz-section">
+    <div class="instructions">
+      <h2>How to complete this assessment</h2>
+      <p>Read each statement and decide how strongly it applies to YOU. Score yourself 1 to 5 based on the following guide.</p>
+      <div class="scale-guide">
+        <span>1 = Does not apply</span>
+        <span>3 = Applies half the time</span>
+        <span>5 = Always applies</span>
+      </div>
+    </div>
+
+    <div class="progress-bar-container">
+      <div class="label"><span id="answered-count">0</span> of 48 answered</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <div id="questions-container"></div>
+
+    <p class="error-msg" id="error-msg">Please answer all 48 questions before submitting.</p>
+
+    <div class="submit-section">
+      <button class="submit-btn" id="submit-btn" onclick="submitAssessment()">See My Results</button>
+    </div>
+  </div>
+
+  <div class="results-section" id="results-section">
+    <div class="results-header">
+      <h2>Your EQ Results</h2>
+      <p>Scores for each of the 4 emotional competencies</p>
+    </div>
+
+    <div class="overall-card">
+      <div>Overall EQ Score</div>
+      <div class="score" id="overall-score"></div>
+      <div class="out-of">out of 240</div>
+    </div>
+
+    <div id="competency-results"></div>
+
+    <div class="interpretation-guide">
+      <h3>Interpretation Guide (per competency)</h3>
+      <div class="guide-row">
+        <span class="guide-range">48–60</span>
+        <span>This is a <strong>strength</strong> for you</span>
+      </div>
+      <div class="guide-row">
+        <span class="guide-range">25–47</span>
+        <span>Giving attention to where you feel weakest will pay dividends</span>
+      </div>
+      <div class="guide-row">
+        <span class="guide-range">12–24</span>
+        <span>This is a <strong>development area</strong> for you</span>
+      </div>
+    </div>
+
+    <div class="submit-section">
+      <button class="retake-btn" onclick="retake()">Retake Assessment</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {n:1, text:"I realise immediately when I lose my temper"},
+  {n:2, text:"I can 'reframe' bad situations quickly"},
+  {n:3, text:"I am able to motivate myself to do difficult tasks"},
+  {n:4, text:"I am able to see things from the other person's viewpoint"},
+  {n:5, text:"I am an excellent listener"},
+  {n:6, text:"When making high-stakes decisions, I try to factor how I'm feeling now as well as how I might feel later"},
+  {n:7, text:"I handle emotional setbacks well"},
+  {n:8, text:"I am usually able to prioritise important activities at work and get on with them"},
+  {n:9, text:"I am excellent at empathising with someone else's problem"},
+  {n:10, text:"I gather feedback on myself regularly and assess my strengths and growth areas"},
+  {n:11, text:"I usually recognise when I am stressed"},
+  {n:12, text:"I reflect on my actions or impact"},
+  {n:13, text:"I notice when a team is unhappy"},
+  {n:14, text:"I can tell if someone is not happy with me"},
+  {n:15, text:"I am good at adapting to different situations and mixing with a variety of people"},
+  {n:16, text:"I can identify my emotions easily"},
+  {n:17, text:"I rarely 'fly off the handle' at other people"},
+  {n:18, text:"I am comfortable with conflict"},
+  {n:19, text:"I can tell if a team of people are not getting along with each other"},
+  {n:20, text:"People are the most interesting thing in life for me"},
+  {n:21, text:"When I feel anxious I usually can account for the reason(s)"},
+  {n:22, text:"Difficult people do not annoy me"},
+  {n:23, text:"Managing difficult conversations is a practice I'm good at"},
+  {n:24, text:"I can usually understand or uncover why people are being difficult towards me"},
+  {n:25, text:"I love to meet new people and get to know what makes them 'tick'"},
+  {n:26, text:"I know when I'm being unreasonable"},
+  {n:27, text:"I can consciously alter my frame of mind or mood"},
+  {n:28, text:"I can rally different people around a message"},
+  {n:29, text:"Other individuals are not 'difficult' just 'different'"},
+  {n:30, text:"I like to work with a variety of diverse colleagues"},
+  {n:31, text:"Awareness of my own emotions is very important to me at all times"},
+  {n:32, text:"I do not let stressful situations or people affect me once I have left work"},
+  {n:33, text:"I inspire people to follow a vision"},
+  {n:34, text:"I can understand if I am being unreasonable"},
+  {n:35, text:"I like to ask questions to find out what it is important to people"},
+  {n:36, text:"I can tell if someone has upset or annoyed me"},
+  {n:37, text:"I use my understanding of others to build a great team culture"},
+  {n:38, text:"I recognise and handle the emotions of others well"},
+  {n:39, text:"I see working with difficult people as simply a challenge to understand them and win them over"},
+  {n:40, text:"I can notice the physical cues when I'm feeling emotional"},
+  {n:41, text:"I am able to regulate my emotions"},
+  {n:42, text:"I can motivate myself even when I feel low"},
+  {n:43, text:"I remain non-judgemental and accept the emotions of others"},
+  {n:44, text:"I am good at reconciling differences with other people"},
+  {n:45, text:"I know what makes me happy"},
+  {n:46, text:"I can express a variety of emotions to others"},
+  {n:47, text:"I pick up on body language cues"},
+  {n:48, text:"I generally build solid relationships with those I work with"},
+];
+
+const competencies = {
+  "Self Awareness":          [1,6,10,12,16,21,26,31,34,36,40,45],
+  "Self Management":         [2,3,7,8,11,17,22,27,32,41,42,46],
+  "Social Awareness":        [4,9,13,14,19,24,25,29,35,38,43,47],
+  "Relationship Management": [5,15,18,20,23,28,30,33,37,39,44,48],
+};
+
+const competencyColors = {
+  "Self Awareness": "#2a7f8f",
+  "Self Management": "#e67e22",
+  "Social Awareness": "#8e44ad",
+  "Relationship Management": "#27ae60",
+};
+
+const questionToCompetency = {};
+for (const [comp, nums] of Object.entries(competencies)) {
+  for (const n of nums) questionToCompetency[n] = comp;
+}
+
+const answers = {};
+
+function buildQuiz() {
+  const container = document.getElementById('questions-container');
+  questions.forEach(q => {
+    const comp = questionToCompetency[q.n];
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = `q-${q.n}`;
+    card.innerHTML = `
+      <div class="question-header">
+        <div class="question-num">${q.n}</div>
+        <div>
+          <div class="question-text">${q.text}</div>
+          <div class="question-category">${comp}</div>
+        </div>
+      </div>
+      <div class="rating-group">
+        ${[1,2,3,4,5].map(v => `<button class="rating-btn" data-q="${q.n}" data-v="${v}" onclick="rate(${q.n},${v},this)">${v}</button>`).join('')}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function rate(qNum, value, btn) {
+  answers[qNum] = value;
+  const card = document.getElementById(`q-${qNum}`);
+  card.classList.add('answered');
+  card.classList.remove('unanswered-highlight');
+  card.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  updateProgress();
+}
+
+function updateProgress() {
+  const count = Object.keys(answers).length;
+  document.getElementById('answered-count').textContent = count;
+  document.getElementById('progress-fill').style.width = `${(count / 48) * 100}%`;
+}
+
+function submitAssessment() {
+  const unanswered = questions.filter(q => !(q.n in answers));
+  if (unanswered.length > 0) {
+    document.getElementById('error-msg').style.display = 'block';
+    const first = document.getElementById(`q-${unanswered[0].n}`);
+    unanswered.forEach(q => document.getElementById(`q-${q.n}`).classList.add('unanswered-highlight'));
+    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  document.getElementById('error-msg').style.display = 'none';
+  showResults();
+}
+
+function showResults() {
+  document.getElementById('quiz-section').style.display = 'none';
+  const results = document.getElementById('results-section');
+  results.classList.add('visible');
+
+  let overall = 0;
+  const resultsContainer = document.getElementById('competency-results');
+  resultsContainer.innerHTML = '';
+
+  for (const [comp, nums] of Object.entries(competencies)) {
+    const total = nums.reduce((sum, n) => sum + answers[n], 0);
+    overall += total;
+    const max = 60;
+    const pct = (total / max) * 100;
+    const color = competencyColors[comp];
+
+    let interpClass, interpText;
+    if (total >= 48) {
+      interpClass = 'interp-strength';
+      interpText = 'This is a strength for you';
+    } else if (total >= 25) {
+      interpClass = 'interp-attention';
+      interpText = 'Giving attention to where you feel weakest will pay dividends';
+    } else {
+      interpClass = 'interp-development';
+      interpText = 'This is a development area for you';
+    }
+
+    const card = document.createElement('div');
+    card.className = 'competency-card';
+    card.innerHTML = `
+      <div class="competency-title" style="color:${color}">${comp}</div>
+      <div class="competency-score" style="color:${color}">${total} <span style="font-size:1rem;font-weight:400;color:#718096">/ 60</span></div>
+      <div class="competency-bar-track">
+        <div class="competency-bar-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <div class="competency-interpretation ${interpClass}">${interpText}</div>
+    `;
+    resultsContainer.appendChild(card);
+  }
+
+  document.getElementById('overall-score').textContent = overall;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function retake() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.question-card').forEach(c => c.classList.remove('answered'));
+  updateProgress();
+  document.getElementById('results-section').classList.remove('visible');
+  document.getElementById('quiz-section').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildQuiz();
+</script>
+</body>
+</html>
